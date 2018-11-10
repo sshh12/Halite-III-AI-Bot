@@ -4,13 +4,13 @@ A Bot for Two Sigma's AI Competition.
 
 ## Contents
 
-## Active SOTA
+### Active SOTA
 
 The most recent iteration and/or highest scoring bot.
 
 ``//TODO``
 
-## Archive
+### Archive
 
 Old Bots to test against.
 
@@ -41,6 +41,6 @@ with the reward proportional to the halite gained each move.
 
 Randomly pick all actions, pretty much just the starter bot.
 
-## Bin
+### Bin
 
 Tools for running halite games.
