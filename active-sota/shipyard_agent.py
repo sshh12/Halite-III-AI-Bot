@@ -25,7 +25,7 @@ LOSS_CLIPPING = 0.2
 NOISE = 0.01
 GAMMA = 0.99
 NUM_ACTIONS = 2
-NUM_STATE = 195
+NUM_STATE = 198
 ENTROPY_LOSS = 5 * 1e-3
 LR = 1e-4
 BATCH_SIZE = 128
@@ -147,7 +147,7 @@ class ShipyardAgent:
     def _generate_action(self):
 
         pred = ShipyardAgent.actor_model.predict([[self.obs], DUMMY_VALUE, DUMMY_ACTION])
-        action = pick_action(pred[0], temp=2.0)
+        action = pick_action(pred[0], temp=1.5)
         action_matrix = np.zeros(pred[0].shape)
         action_matrix[action] = 1
 

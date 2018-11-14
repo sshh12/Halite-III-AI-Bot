@@ -151,7 +151,7 @@ class ShipAgent:
     def _generate_action(self):
 
         pred = ShipAgent.actor_model.predict([[self.obs], DUMMY_VALUE, DUMMY_ACTION])
-        action = pick_action(pred[0], temp=3.0)
+        action = pick_action(pred[0], temp=1.5)
         action_matrix = np.zeros(pred[0].shape)
         action_matrix[action] = 1
 

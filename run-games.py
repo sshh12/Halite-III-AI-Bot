@@ -47,13 +47,17 @@ def main():
 
         proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in proc.stdout.readlines():
-            match = re_score.search(line.decode("utf-8"))
-            if match:
-                name = match.group(1)
-                rank = int(match.group(2))
-                score = int(match.group(3))
-                ranks[name].append(rank)
-                scores[name].append(score)
+            line = line.decode("utf-8")
+            if '[error]' in line:
+                print(line)
+            else:
+                match = re_score.search(line)
+                if match:
+                    name = match.group(1)
+                    rank = int(match.group(2))
+                    score = int(match.group(3))
+                    ranks[name].append(rank)
+                    scores[name].append(score)
 
     names = list(ranks)
     names.sort(key=lambda n: sum(scores[n]) / len(scores[n]), reverse=True)
