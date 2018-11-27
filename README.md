@@ -14,6 +14,11 @@ The most recent iteration and/or highest scoring bot.
 
 Old Bots to test against.
 
+#### Bot F
+
+This bot was testing a mocking strategy where the reward was partially based 
+on how its actions were similar to an 'expert bot'.
+
 #### Bot E
 
 ##### µ = 36.8
