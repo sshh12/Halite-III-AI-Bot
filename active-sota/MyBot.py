@@ -8,6 +8,9 @@ import logging
 
 from halite_agent import HaliteAgent
 from bot_utils import *
+import pickle
+import os
+import uuid
 
 from AlgoBot2 import play
 
@@ -15,7 +18,10 @@ game = hlt.Game()
 
 game.ready("ConvBot")
 
-logging.info("[MAIN] Successfully created bot! My Player ID is {}.".format(game.my_id))
+logging.info("[ConvBot] Successfully created bot! My Player ID is {}.".format(game.my_id))
+
+DATA = []
+DATANAME = str(uuid.uuid4())
 
 while True:
 
@@ -25,9 +31,7 @@ while True:
     game_map = game.game_map
 
     algo_cmds = play(game)
-    logging.info(algo_cmds)
-
-    mat = game_to_matrix(game)
+    game_mat = game_to_matrix(game)
     cmds_mat = commands_to_matrix(game, algo_cmds)
     cmds = matrix_to_cmds(game, cmds_mat)
 
@@ -35,3 +39,8 @@ while True:
     logging.info(cmds)
 
     game.end_turn(algo_cmds)
+
+    os.makedirs('train', exist_ok=True)
+    DATA.append((game_mat, cmds_mat))
+    with open(f'train\\{DATANAME}.dat', 'wb') as f:
+        pickle.dump(DATA, f)

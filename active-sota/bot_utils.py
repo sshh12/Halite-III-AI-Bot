@@ -37,9 +37,9 @@ def game_to_matrix(game):
     # 3 enemy ships
     # 4 halite
 
-    for x in range(game_map.height):
+    for y in range(game_map.height):
 
-        for y in range(game_map.width):
+        for x in range(game_map.width):
 
             pos = Position(x, y)
             cell = game_map[pos]
@@ -89,19 +89,19 @@ def commands_to_matrix(game, cmds):
         if move:
             _, _, dir = move.split(' ')
             i = {'n': 2, 's': 3, 'w': 4, 'e': 5}[dir]
-        else:
-            i = 0
-
-        pos = ship.position
-        cmd_mat[pos.y, pos.x, i] = 1
+            pos = ship.position
+            cmd_mat[pos.y, pos.x, i] = 1
 
     if 'g' in cmds:
         cmd_mat[shipyard_pos.y, shipyard_pos.x, 1] = 1
     else:
-        cmd_mat[shipyard_pos.y, shipyard_pos.x, 0] = 1
+        if np.count_nonzero(cmd_mat[shipyard_pos.y, shipyard_pos.x]) == 0:
+            cmd_mat[shipyard_pos.y, shipyard_pos.x, 0] = 1
 
-    empty_idx = np.where(cmd_mat[:, :] == [0]*6)
+    empty_idx = np.where(np.all(cmd_mat == [0]*6, axis=-1))
     cmd_mat[empty_idx[0], empty_idx[1], 0] = 1
+
+    logging.info(cmd_mat[shipyard_pos.y, shipyard_pos.x])
 
     return cmd_mat
 
@@ -120,9 +120,9 @@ def matrix_to_cmds(game, matrix):
     # 4 left
     # 5 right
 
-    for x in range(game_map.height):
+    for y in range(game_map.height):
 
-        for y in range(game_map.width):
+        for x in range(game_map.width):
 
             vec = matrix[y, x]
 
@@ -130,12 +130,12 @@ def matrix_to_cmds(game, matrix):
 
             if vec[0] == 1:
                 continue
-            elif vec[1] == 1:
+            if vec[1] == 1:
                 if x == shipyard_pos.x and y == shipyard_pos.y:
                     cmds.append('g')
                 else:
                     pass # dropoff logic
-            else:
+            if vec[2] == 1 or vec[3] == 1 or vec[4] == 1 or vec[5] == 1:
                 cur_ship = None
                 for ship in ships:
                     pos = ship.position
