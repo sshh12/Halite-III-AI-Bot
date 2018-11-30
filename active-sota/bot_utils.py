@@ -61,7 +61,10 @@ def game_to_matrix(game):
     # norm halite
     map_mat[:, :, 4] = map_mat[:, :, 4] / 500
 
-    return map_mat
+    game_vec = list(map(int, bin(game.turn_number)[2:].zfill(9)))
+    game_vec = np.array(game_vec)
+
+    return map_mat, game_vec
 
 def commands_to_matrix(game, cmds):
 
@@ -101,8 +104,6 @@ def commands_to_matrix(game, cmds):
     empty_idx = np.where(np.all(cmd_mat == [0]*6, axis=-1))
     cmd_mat[empty_idx[0], empty_idx[1], 0] = 1
 
-    logging.info(cmd_mat[shipyard_pos.y, shipyard_pos.x])
-
     return cmd_mat
 
 def matrix_to_cmds(game, matrix):
@@ -125,27 +126,26 @@ def matrix_to_cmds(game, matrix):
         for x in range(game_map.width):
 
             vec = matrix[y, x]
+            vec = (vec[:] > 0.8)
 
-            # make one hot
-
-            if vec[0] == 1:
+            if vec[0]:
                 continue
-            if vec[1] == 1:
+            if vec[1]:
                 if x == shipyard_pos.x and y == shipyard_pos.y:
                     cmds.append('g')
                 else:
                     pass # dropoff logic
-            if vec[2] == 1 or vec[3] == 1 or vec[4] == 1 or vec[5] == 1:
+            if vec[2] or vec[3] or vec[4] or vec[5]:
                 cur_ship = None
                 for ship in ships:
                     pos = ship.position
                     if x == pos.x and y == pos.y:
                         cur_ship = ship
                         break
-                if vec[2] == 1: cmds.append(f'm {ship.id} n')
-                if vec[3] == 1: cmds.append(f'm {ship.id} s')
-                if vec[4] == 1: cmds.append(f'm {ship.id} w')
-                if vec[5] == 1: cmds.append(f'm {ship.id} e')
+                if vec[2]: cmds.append(f'm {ship.id} n')
+                if vec[3]: cmds.append(f'm {ship.id} s')
+                if vec[4]: cmds.append(f'm {ship.id} w')
+                if vec[5]: cmds.append(f'm {ship.id} e')
 
     return cmds
 
