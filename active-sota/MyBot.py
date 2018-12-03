@@ -62,7 +62,9 @@ def b():
 
         game_mat, game_vec = game_to_matrix(game)
 
-        pred = model.predict([np.array([game_mat])])
+        obs = np.array([game_mat])
+
+        pred = model.predict(obs)
 
         cmds = matrix_to_cmds(game, pred[0])
 

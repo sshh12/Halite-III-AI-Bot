@@ -126,7 +126,8 @@ def matrix_to_cmds(game, matrix):
         for x in range(game_map.width):
 
             vec = matrix[y, x]
-            vec = (vec[:] > 0.8)
+            m = np.amax(vec)
+            vec = (vec / m) > .6
 
             if vec[0]:
                 continue
@@ -142,10 +143,12 @@ def matrix_to_cmds(game, matrix):
                     if x == pos.x and y == pos.y:
                         cur_ship = ship
                         break
-                if vec[2]: cmds.append(f'm {ship.id} n')
-                if vec[3]: cmds.append(f'm {ship.id} s')
-                if vec[4]: cmds.append(f'm {ship.id} w')
-                if vec[5]: cmds.append(f'm {ship.id} e')
+                if not cur_ship:
+                    continue
+                if vec[2]: cmds.append(f'm {cur_ship.id} n')
+                if vec[3]: cmds.append(f'm {cur_ship.id} s')
+                if vec[4]: cmds.append(f'm {cur_ship.id} w')
+                if vec[5]: cmds.append(f'm {cur_ship.id} e')
 
     return cmds
 
