@@ -7,6 +7,10 @@ from bot_utils import *
 
 with import_quietly():
     from keras.models import load_model
+    import keras.losses
+    def ignore_unknown_xentropy(ytrue, ypred):
+        return (1 - ytrue[:, :, 0]) * keras.losses.categorical_crossentropy(ytrue, ypred)
+    keras.losses.ignore_unknown_xentropy = ignore_unknown_xentropy
 
 import pickle
 import os

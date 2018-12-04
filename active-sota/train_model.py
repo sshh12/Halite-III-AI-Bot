@@ -4,6 +4,8 @@ import numpy as np
 
 from keras.models import Model
 from keras.layers import *
+from keras.losses import *
+from keras.metrics import *
 from keras import backend as K
 from keras.utils import plot_model
 
@@ -35,7 +37,7 @@ actions = actions[indices]
 print(maps.shape, vecs.shape, actions.shape)
 
 map_input = Input(shape=(32, 32, 5))
-game_vec_input = Input(shape=(9,))
+game_vec_input = Input(shape=(12,))
 
 x = Conv2D(16, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(map_input)
 x = Conv2D(16, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
@@ -73,14 +75,20 @@ x = Conv2D(12, kernel_size=3, activation='selu', padding='same', kernel_initiali
 x = Conv2D(6, kernel_size=1, activation='linear', padding='same', kernel_initializer='he_normal')(x)
 x = Reshape((6, 32 * 32))(x)
 x = Permute((2, 1))(x)
-x = Activation("softmax")(x)
+x = Activation('softmax')(x)
 
 out = x
 
 model = Model(inputs=[map_input, game_vec_input], outputs=out)
-model.compile('adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-model.fit(x=[maps, vecs], y=actions, epochs=16, batch_size=16, validation_split=0.1, verbose=1)
+def ignore_unknown_xentropy(ytrue, ypred):
+    return (1 - ytrue[:, :, 0]) * categorical_crossentropy(ytrue, ypred)
 
-model.save('conv-model.h5')
-plot_model(model, to_file='model.png')
+model.compile('adam', loss=ignore_unknown_xentropy, metrics=['acc'])
+
+if __name__ == '__main__':
+
+    model.fit(x=[maps, vecs], y=actions, epochs=100, batch_size=32, validation_split=0.2, verbose=1)
+
+    model.save('conv-model.h5')
+    plot_model(model, to_file='model.png')

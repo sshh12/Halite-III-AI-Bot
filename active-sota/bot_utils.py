@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 import numpy as np
 import logging
+import random
 import sys
 import os
 
@@ -28,6 +29,7 @@ def import_quietly():
 def game_to_matrix(game):
 
     game_map = game.game_map
+    me = game.me
 
     map_mat = np.zeros((game_map.height, game_map.width, 5), np.float32)
 
@@ -62,6 +64,9 @@ def game_to_matrix(game):
     map_mat[:, :, 4] = map_mat[:, :, 4] / 500
 
     game_vec = list(map(int, bin(game.turn_number)[2:].zfill(9)))
+    game_vec.append(np.log(me.halite_amount + 10) / 8.5)
+    game_vec.append(me.halite_amount > 1000)
+    game_vec.append(me.halite_amount > 4000)
     game_vec = np.array(game_vec, dtype=np.float32)
 
     return map_mat, game_vec
@@ -101,19 +106,20 @@ def commands_to_matrix(game, cmds):
         cmd_mat[shipyard_pos.y, shipyard_pos.x, 3] = 0
         cmd_mat[shipyard_pos.y, shipyard_pos.x, 4] = 0
         cmd_mat[shipyard_pos.y, shipyard_pos.x, 5] = 0
-    else:
-        if np.count_nonzero(cmd_mat[shipyard_pos.y, shipyard_pos.x]) == 0:
-            cmd_mat[shipyard_pos.y, shipyard_pos.x, 0] = 1
 
-    empty_idx = np.where(np.all(cmd_mat == [0]*6, axis=-1))
-    cmd_mat[empty_idx[0], empty_idx[1], 0] = 1
+    # fill rest w/stay
+    for y in range(game_map.height):
+        for x in range(game_map.width):
+            if np.count_nonzero(cmd_mat[y, x]) == 6:
+                cmd_mat[y, x, 0] = 1
 
     return cmd_mat
 
 def matrix_to_cmds(game, matrix):
 
     game_map = game.game_map
-    ships = game.me.get_ships()
+    me = game.me
+    ships = me.get_ships()
     shipyard_pos = game.me.shipyard.position
 
     cmds = []
@@ -132,10 +138,16 @@ def matrix_to_cmds(game, matrix):
             vec = matrix[y, x]
             m = np.argmax(vec)
 
+            # with open('test.txt', 'a') as e:
+            #      e.write(str(vec / np.amax(vec)) + '\n')
+            #
+            # with open('test.txt', 'a') as e:
+            #      e.write(str(m) + '\n')
+
             if m == 0:
                 continue
             if m == 1:
-                if x == shipyard_pos.x and y == shipyard_pos.y:
+                if x == shipyard_pos.x and y == shipyard_pos.y and me.halite_amount > 1000:
                     cmds.append('g')
                 else:
                     pass # dropoff logic
