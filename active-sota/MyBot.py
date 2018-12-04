@@ -62,11 +62,11 @@ def b():
 
         game_mat, game_vec = game_to_matrix(game)
 
-        obs = np.array([game_mat])
+        pred = model.predict([[game_mat], [game_vec]])
 
-        pred = model.predict(obs)
+        actions = pred.reshape((1, 32, 32, 6))[0]
 
-        cmds = matrix_to_cmds(game, pred[0])
+        cmds = matrix_to_cmds(game, actions)
 
         with open('test.txt', 'a') as e:
             e.write(str(cmds) + '\n')

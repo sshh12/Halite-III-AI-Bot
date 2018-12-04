@@ -5,6 +5,7 @@ import numpy as np
 from keras.models import Model
 from keras.layers import *
 from keras import backend as K
+from keras.utils import plot_model
 
 maps = []
 vecs = []
@@ -23,6 +24,7 @@ for fn in os.listdir('train'):
 maps = np.array(maps)
 vecs = np.array(vecs)
 actions = np.array(actions)
+actions = actions.reshape((actions.shape[0], 1024, 6))
 
 indices = np.arange(maps.shape[0])
 np.random.shuffle(indices)
@@ -30,51 +32,55 @@ maps = maps[indices]
 vecs = vecs[indices]
 actions = actions[indices]
 
-def depth_softmax(matrix):
-    sigmoid = lambda x: 1 / (1 + K.exp(-x))
-    sigmoided_matrix = sigmoid(matrix)
-    softmax_matrix = sigmoided_matrix / K.sum(sigmoided_matrix, axis=0)
-    return softmax_matrix
-
 print(maps.shape, vecs.shape, actions.shape)
 
 map_input = Input(shape=(32, 32, 5))
+game_vec_input = Input(shape=(9,))
 
 x = Conv2D(16, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(map_input)
 x = Conv2D(16, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
 
-x = b = Dropout(0.5)(x)
+x = b = Dropout(0.25)(x)
 x = MaxPooling2D(pool_size=(2, 2))(x)
 
 x = Conv2D(32, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
 x = Conv2D(32, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
 
-x = a = Dropout(0.5)(x)
+x = a = Dropout(0.25)(x)
 x = MaxPooling2D(pool_size=(2, 2))(x)
 
 x = Conv2D(64, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
+
+game_vec_reshaped = RepeatVector(8 * 8)(game_vec_input)
+game_vec_reshaped = Reshape((8, 8, int(game_vec_input.shape[1])))(game_vec_reshaped)
+
+x = concatenate([x, game_vec_reshaped], axis=3)
+
 x = Conv2D(64, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
 
-x = Dropout(0.5)(x)
-x = UpSampling2D(size=(2, 2))(x)
+x = Dropout(0.25)(x)
+x = Conv2DTranspose(32, (2, 2), strides=(2, 2))(x)
 
 x = Conv2D(32, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
 x = concatenate([x, a], axis=3)
 x = Conv2D(32, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
 
-x = UpSampling2D(size=(2, 2))(x)
+x = Conv2DTranspose(16, (2, 2), strides=(2, 2))(x)
 
 x = Conv2D(16, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
 x = concatenate([x, b], axis=3)
 x = Conv2D(12, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
 x = Conv2D(6, kernel_size=1, activation='linear', padding='same', kernel_initializer='he_normal')(x)
-x = Lambda(depth_softmax)(x)
+x = Reshape((6, 32 * 32))(x)
+x = Permute((2, 1))(x)
+x = Activation("softmax")(x)
 
 out = x
 
-model = Model(inputs=map_input, outputs=out)
-model.compile('adam', loss='binary_crossentropy', metrics=['accuracy'])
+model = Model(inputs=[map_input, game_vec_input], outputs=out)
+model.compile('adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-model.fit(x=[maps], y=actions, epochs=5, batch_size=32, validation_split=0.1)
+model.fit(x=[maps, vecs], y=actions, epochs=16, batch_size=16, validation_split=0.1, verbose=1)
 
 model.save('conv-model.h5')
+plot_model(model, to_file='model.png')

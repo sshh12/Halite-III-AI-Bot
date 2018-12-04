@@ -62,7 +62,7 @@ def game_to_matrix(game):
     map_mat[:, :, 4] = map_mat[:, :, 4] / 500
 
     game_vec = list(map(int, bin(game.turn_number)[2:].zfill(9)))
-    game_vec = np.array(game_vec)
+    game_vec = np.array(game_vec, dtype=np.float32)
 
     return map_mat, game_vec
 
@@ -97,6 +97,10 @@ def commands_to_matrix(game, cmds):
 
     if 'g' in cmds:
         cmd_mat[shipyard_pos.y, shipyard_pos.x, 1] = 1
+        cmd_mat[shipyard_pos.y, shipyard_pos.x, 2] = 0
+        cmd_mat[shipyard_pos.y, shipyard_pos.x, 3] = 0
+        cmd_mat[shipyard_pos.y, shipyard_pos.x, 4] = 0
+        cmd_mat[shipyard_pos.y, shipyard_pos.x, 5] = 0
     else:
         if np.count_nonzero(cmd_mat[shipyard_pos.y, shipyard_pos.x]) == 0:
             cmd_mat[shipyard_pos.y, shipyard_pos.x, 0] = 1
@@ -126,17 +130,16 @@ def matrix_to_cmds(game, matrix):
         for x in range(game_map.width):
 
             vec = matrix[y, x]
-            m = np.amax(vec)
-            vec = (vec / m) > .6
+            m = np.argmax(vec)
 
-            if vec[0]:
+            if m == 0:
                 continue
-            if vec[1]:
+            if m == 1:
                 if x == shipyard_pos.x and y == shipyard_pos.y:
                     cmds.append('g')
                 else:
                     pass # dropoff logic
-            if vec[2] or vec[3] or vec[4] or vec[5]:
+            if m in [2, 3, 4, 5]:
                 cur_ship = None
                 for ship in ships:
                     pos = ship.position
@@ -145,10 +148,10 @@ def matrix_to_cmds(game, matrix):
                         break
                 if not cur_ship:
                     continue
-                if vec[2]: cmds.append(f'm {cur_ship.id} n')
-                if vec[3]: cmds.append(f'm {cur_ship.id} s')
-                if vec[4]: cmds.append(f'm {cur_ship.id} w')
-                if vec[5]: cmds.append(f'm {cur_ship.id} e')
+                if m == 2: cmds.append(f'm {cur_ship.id} n')
+                if m == 3: cmds.append(f'm {cur_ship.id} s')
+                if m == 4: cmds.append(f'm {cur_ship.id} w')
+                if m == 5: cmds.append(f'm {cur_ship.id} e')
 
     return cmds
 
