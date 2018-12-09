@@ -31,13 +31,14 @@ def game_to_matrix(game):
     game_map = game.game_map
     me = game.me
 
-    map_mat = np.zeros((game_map.height, game_map.width, 5), np.float32)
+    map_mat = np.zeros((game_map.height, game_map.width, 6), np.float32)
 
     # 0 dropoffs/shipyards
     # 1 my ships
     # 2 enemy dropoffs/shipyards
     # 3 enemy ships
     # 4 halite
+    # 5 ship halite amt
 
     for y in range(game_map.height):
 
@@ -49,8 +50,10 @@ def game_to_matrix(game):
             if cell.is_occupied:
                 if cell.ship.owner == game.my_id:
                     map_mat[y, x, 1] = 1
+                    map_mat[y, x, 5] = cell.ship.halite_amount
                 else:
                     map_mat[y, x, 3] = 1
+                    map_mat[y, x, 5] = -cell.ship.halite_amount
 
             if cell.has_structure:
                 if cell.structure.owner == game.my_id:
@@ -62,7 +65,9 @@ def game_to_matrix(game):
 
     # norm halite
     map_mat[:, :, 4] = map_mat[:, :, 4] / 500
+    map_mat[:, :, 5] = map_mat[:, :, 5] / 500
 
+    # non-spacial game information
     game_vec = list(map(int, bin(game.turn_number)[2:].zfill(9)))
     game_vec.append(np.log(me.halite_amount + 10) / 8.5)
     game_vec.append(me.halite_amount > 1000)

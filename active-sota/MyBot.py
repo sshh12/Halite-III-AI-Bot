@@ -8,9 +8,18 @@ from bot_utils import *
 with import_quietly():
     from keras.models import load_model
     import keras.losses
-    def ignore_unknown_xentropy(ytrue, ypred):
-        return (1 - ytrue[:, :, 0]) * keras.losses.categorical_crossentropy(ytrue, ypred)
-    keras.losses.ignore_unknown_xentropy = ignore_unknown_xentropy
+    def custom_xentropy(ytrue, ypred):
+        # 0 stay
+        # 1 spawn/dropoff
+        # 2 up
+        # 3 down
+        # 4 left
+        # 5 right
+        xentropy = keras.losses.categorical_crossentropy(ytrue, ypred)
+        xentropy = (1 - ytrue[:, :, 0]) * xentropy
+        xentropy += 0.25 * ytrue[:, :, 1] * xentropy
+        return xentropy
+    keras.losses.custom_xentropy = custom_xentropy
 
 import pickle
 import os
@@ -30,6 +39,8 @@ def a():
     game = hlt.Game()
     game.ready("TrainConv")
 
+    i = 0
+
     while True:
 
         game.update_frame()
@@ -37,20 +48,23 @@ def a():
         me = game.me
         game_map = game.game_map
 
-        algo_cmds = play(game)
         game_mat, game_vec = game_to_matrix(game)
-        cmds_mat = commands_to_matrix(game, algo_cmds)
-        cmds = matrix_to_cmds(game, cmds_mat)
+
+        algo_cmds = play(game)
 
         logging.info(algo_cmds)
-        logging.info(cmds)
-
         game.end_turn(algo_cmds)
 
-        os.makedirs('train', exist_ok=True)
+        cmds_mat = commands_to_matrix(game, algo_cmds)
         DATA.append((game_mat, game_vec, cmds_mat))
-        with open(f'train\\{DATANAME}.dat', 'wb') as f:
-            pickle.dump(DATA, f)
+
+        if i % 100 == 0 or i == 250 or i == 490:
+
+            os.makedirs('train', exist_ok=True)
+            with open(f'train\\{DATANAME}.halite.pkl', 'wb') as f:
+                pickle.dump(DATA, f)
+
+        i += 1
 
 
 def b():
@@ -68,7 +82,7 @@ def b():
 
         pred = model.predict([[game_mat], [game_vec]])
 
-        actions = pred.reshape((1, 32, 32, 6))[0]
+        actions = pred.reshape((1, 64, 64, 6))[0]
 
         cmds = matrix_to_cmds(game, actions)
 

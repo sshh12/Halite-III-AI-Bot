@@ -103,6 +103,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# Halite
+# Halite Repo
 replays/
 train/*.dat
+
+train/*.pkl
+test.txt
