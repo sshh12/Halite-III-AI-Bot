@@ -30,8 +30,9 @@ def game_to_matrix(game):
 
     game_map = game.game_map
     me = game.me
+    ships = game.me.get_ships()
 
-    map_mat = np.zeros((game_map.height, game_map.width, 6), np.float32)
+    map_mat = np.zeros((game_map.height, game_map.width, 7), np.float32)
 
     # 0 dropoffs/shipyards
     # 1 my ships
@@ -39,6 +40,7 @@ def game_to_matrix(game):
     # 3 enemy ships
     # 4 halite
     # 5 ship halite amt
+    # 6 ship is full
 
     for y in range(game_map.height):
 
@@ -50,10 +52,9 @@ def game_to_matrix(game):
             if cell.is_occupied:
                 if cell.ship.owner == game.my_id:
                     map_mat[y, x, 1] = 1
-                    map_mat[y, x, 5] = cell.ship.halite_amount
                 else:
                     map_mat[y, x, 3] = 1
-                    map_mat[y, x, 5] = -cell.ship.halite_amount
+                map_mat[y, x, 5] = cell.ship.halite_amount
 
             if cell.has_structure:
                 if cell.structure.owner == game.my_id:
@@ -62,13 +63,17 @@ def game_to_matrix(game):
                     map_mat[y, x, 2] = 1
 
             map_mat[y, x, 4] = cell.halite_amount
+            map_mat[y, x, 6] = (1 if cell.halite_amount >= 1000 else 0)
 
     # norm halite
-    map_mat[:, :, 4] = map_mat[:, :, 4] / 500
+    map_mat[:, :, 4] = np.sqrt(map_mat[:, :, 4] / 100)
     map_mat[:, :, 5] = map_mat[:, :, 5] / 500
 
     # non-spacial game information
-    game_vec = list(map(int, bin(game.turn_number)[2:].zfill(9)))
+    binary_encode = lambda num, pad: list(map(int, bin(num)[2:].zfill(pad)))[-pad:]
+
+    game_vec = binary_encode(game.turn_number, 9)
+    game_vec.extend(binary_encode(len(ships), 6))
     game_vec.append(np.log(me.halite_amount + 10) / 8.5)
     game_vec.append(me.halite_amount > 1000)
     game_vec.append(me.halite_amount > 4000)
@@ -106,11 +111,7 @@ def commands_to_matrix(game, cmds):
             cmd_mat[pos.y, pos.x, i] = 1
 
     if 'g' in cmds:
-        cmd_mat[shipyard_pos.y, shipyard_pos.x, 1] = 1
-        cmd_mat[shipyard_pos.y, shipyard_pos.x, 2] = 0
-        cmd_mat[shipyard_pos.y, shipyard_pos.x, 3] = 0
-        cmd_mat[shipyard_pos.y, shipyard_pos.x, 4] = 0
-        cmd_mat[shipyard_pos.y, shipyard_pos.x, 5] = 0
+        cmd_mat[shipyard_pos.y, shipyard_pos.x] = [0, 1, 0, 0, 0, 0]
 
     # fill rest w/stay
     for y in range(game_map.height):
@@ -151,11 +152,13 @@ def matrix_to_cmds(game, matrix):
 
             if m == 0:
                 continue
+
             if m == 1:
                 if x == shipyard_pos.x and y == shipyard_pos.y and me.halite_amount > 1000:
                     cmds.append('g')
                 else:
                     pass # dropoff logic
+
             if m in [2, 3, 4, 5]:
                 cur_ship = None
                 for ship in ships:
@@ -165,10 +168,8 @@ def matrix_to_cmds(game, matrix):
                         break
                 if not cur_ship:
                     continue
-                if m == 2: cmds.append(f'm {cur_ship.id} n')
-                if m == 3: cmds.append(f'm {cur_ship.id} s')
-                if m == 4: cmds.append(f'm {cur_ship.id} w')
-                if m == 5: cmds.append(f'm {cur_ship.id} e')
+                dir = {2: 'n', 3: 's', 4: 'w', 5: 'e'}[m]
+                cmds.append(f'm {cur_ship.id} {dir}')
 
     return cmds
 

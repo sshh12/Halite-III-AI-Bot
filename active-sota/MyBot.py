@@ -17,7 +17,7 @@ with import_quietly():
         # 5 right
         xentropy = keras.losses.categorical_crossentropy(ytrue, ypred)
         xentropy = (1 - ytrue[:, :, 0]) * xentropy
-        xentropy += 0.25 * ytrue[:, :, 1] * xentropy
+        xentropy += 1 * ytrue[:, :, 1] * xentropy
         return xentropy
     keras.losses.custom_xentropy = custom_xentropy
 
@@ -58,7 +58,7 @@ def a():
         cmds_mat = commands_to_matrix(game, algo_cmds)
         DATA.append((game_mat, game_vec, cmds_mat))
 
-        if i % 100 == 0 or i == 250 or i == 490:
+        if i % 100 == 0:
 
             os.makedirs('train', exist_ok=True)
             with open(f'train\\{DATANAME}.halite.pkl', 'wb') as f:
@@ -91,4 +91,4 @@ def b():
 
         game.end_turn(cmds)
 
-b()
+a()
