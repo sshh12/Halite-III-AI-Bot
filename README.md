@@ -14,9 +14,16 @@ The most recent iteration and/or highest scoring bot.
 
 Old Bots to test against.
 
+#### Bot G
+
+This bot switched from the idea of having a separate (shared) model for
+every unit to a single model that predicted a volume of actions (an action
+vector was predicted for every pixel). The bot was trained with a
+supervised dataset collected by an 'expert' bot playing against the archive.
+
 #### Bot F
 
-This bot was testing a mocking strategy where the reward was partially based 
+This bot was testing a mocking strategy where the reward was partially based
 on how its actions were similar to an 'expert bot'.
 
 #### Bot E

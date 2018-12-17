@@ -27,17 +27,17 @@ import uuid
 import random
 import logging
 
-logging.info("[ConvBot] Successfully created bot!")
+logging.info("[ConvBot-G] Successfully created bot!")
 
-def a():
+def collect_data():
 
-    from AlgoBot2 import play
+    from ExpertBot import play
 
     DATA = []
     DATANAME = str(uuid.uuid4())
 
     game = hlt.Game()
-    game.ready("TrainConv")
+    game.ready("TrainConv-G")
 
     i = 0
 
@@ -67,12 +67,14 @@ def a():
         i += 1
 
 
-def b():
+def use_model():
 
-    model = load_model('halite-conv-model.h5')
+    MODEL = os.path.join('archive', 'bot-g', 'halite-conv-model.h5')
+
+    model = load_model(MODEL)
 
     game = hlt.Game()
-    game.ready("ModelConv")
+    game.ready("ModelConv-G")
 
     while True:
 
@@ -86,9 +88,6 @@ def b():
 
         cmds = matrix_to_cmds(game, actions)
 
-        with open('test.txt', 'a') as e:
-            e.write(str(cmds) + '\n')
-
         game.end_turn(cmds)
 
-a()
+use_model()
