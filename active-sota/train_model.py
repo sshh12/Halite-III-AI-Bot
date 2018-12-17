@@ -3,11 +3,12 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 
-from keras.models import Model
+from keras.models import Model, load_model
 from keras.layers import *
 from keras.losses import *
 from keras.metrics import *
 from keras.optimizers import *
+from keras.callbacks import *
 from keras import backend as K
 from keras.utils import plot_model
 
@@ -109,7 +110,6 @@ x = Activation('softmax')(x)
 
 out = x
 
-model = Model(inputs=[map_input, game_vec_input], outputs=out)
 
 def custom_xentropy(ytrue, ypred):
     # 0 stay
@@ -123,12 +123,16 @@ def custom_xentropy(ytrue, ypred):
     xentropy += 1 * ytrue[:, :, 1] * xentropy
     return xentropy
 
-model.compile(Adam(lr=1e-4), loss=custom_xentropy, metrics=['acc'])
+import keras.losses; keras.losses.custom_xentropy = custom_xentropy
+
+# model = Model(inputs=[map_input, game_vec_input], outputs=out)
+# model.compile(Adam(lr=1e-4), loss=custom_xentropy, metrics=['acc'])
+# plot_model(model, to_file='model.png')
+model = load_model('halite-conv-model.h5')
 
 if __name__ == '__main__':
 
-    plot_model(model, to_file='model.png')
-
-    model.fit(x=[maps, vecs], y=actions, epochs=1, batch_size=16, validation_split=0.2, verbose=1)
-
-    model.save('conv-model.h5')
+    model.fit(x=[maps, vecs], y=actions,
+              epochs=100, batch_size=16,
+              validation_split=0.2, verbose=1,
+              callbacks=[ModelCheckpoint('halite-conv-model.h5', save_best_only=True)])

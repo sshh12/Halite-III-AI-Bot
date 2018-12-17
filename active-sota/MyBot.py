@@ -69,7 +69,7 @@ def a():
 
 def b():
 
-    model = load_model('conv-model.h5')
+    model = load_model('halite-conv-model.h5')
 
     game = hlt.Game()
     game.ready("ModelConv")
@@ -91,4 +91,4 @@ def b():
 
         game.end_turn(cmds)
 
-a()
+b()

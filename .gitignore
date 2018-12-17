@@ -109,3 +109,5 @@ train/*.dat
 
 train/*.pkl
 test.txt
+
+*.h5
