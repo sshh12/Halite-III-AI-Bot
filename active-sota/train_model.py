@@ -1,6 +1,7 @@
 import os
 import pickle
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 
 from keras.models import Model, load_model
@@ -16,7 +17,12 @@ maps = []
 vecs = []
 actions = []
 
-for fn in os.listdir('train'):
+print('Loading training data...', end='')
+
+training_files = os.listdir('train')
+random.Random(1337).shuffle(training_files)
+
+for fn in training_files[:30]:
 
     with open(os.path.join('train', fn), 'rb') as f:
         data = pickle.load(f)
@@ -30,6 +36,8 @@ maps = np.array(maps)
 vecs = np.array(vecs)
 actions = np.array(actions)
 
+print('done')
+
 actions = actions.reshape((actions.shape[0], 64 * 64, 6))
 
 indices = np.arange(maps.shape[0])
@@ -41,7 +49,7 @@ actions = actions[indices]
 print(maps.shape, vecs.shape, actions.shape)
 
 map_input = Input(shape=(64, 64, 7))
-game_vec_input = Input(shape=(18,))
+game_vec_input = Input(shape=(19,))
 
 x = Conv2D(64, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(map_input)
 x = Conv2D(64, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)

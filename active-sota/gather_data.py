@@ -44,8 +44,7 @@ class GameMap:
         self.cells = None
 
     def __getitem__(self, pos):
-        x, y = pos.x, pos.y
-        return self.cells[y][x]
+        return self.cells[pos.y][pos.x]
 
 
 class Player:
@@ -208,14 +207,32 @@ def build_game(turn, base_map, shipyards, frame, me_id):
 
     return game
 
+### Halite API ###
+
+def get_game_ids(player_id, limit=1000):
+
+    ids = []
+
+    req = requests.get(f'https://api.2018.halite.io/v1/api/user/{player_id}/match?order_by=desc,time_played&offset=0&limit={limit}')
+    match_data = req.json()
+
+    for match in match_data:
+
+        if match['map_height'] != 64: # TODO Remove
+            continue
+
+        ids.append(str(match['game_id']))
+
+    return ids
+
 ### Main Function ###
 
 def generate_data(replay_id, save=False):
 
     replay_url = f'https://api.2018.halite.io/v1/api/user/0/match/{replay_id}/replay'
     req = requests.get(replay_url)
-    data = zstd.loads(req.content)
-    data = json.loads(data.decode())
+    comp_data = zstd.loads(req.content)
+    data = json.loads(comp_data.decode())
 
     winner_id = get_winner_id(data)
 
@@ -223,13 +240,13 @@ def generate_data(replay_id, save=False):
     rounds = len(data['full_frames'])
     shipyards = get_shipyards(data)
 
-    print(width, rounds, replay_id)
+    print(f'[#{replay_id}] {width}x{height} n={rounds}')
 
     obs, actions = [], []
 
     for i, frame in enumerate(data['full_frames']):
 
-        game = build_game(i, base_map, shipyards, frame, winner_id)
+        game = build_game(i + 1, base_map, shipyards, frame, winner_id)
         winner_cmds = frame_to_cmds(frame, winner_id)
 
         game_mat, game_vec = game_to_matrix(game)
@@ -244,7 +261,8 @@ def generate_data(replay_id, save=False):
 
     if save:
         os.makedirs('train', exist_ok=True)
-        with open(f'train\\{replay_url.split("/")[-2]}.halite.pkl', 'wb') as f:
+        fn = replay_url.split("/")[-2]
+        with open(f'train\\{fn}.halite.pkl', 'wb') as f:
             pickle.dump(dataset, f)
 
     return data, game, dataset
@@ -252,65 +270,7 @@ def generate_data(replay_id, save=False):
 
 if __name__ == "__main__":
 
-    games = [
-        '3273422',
-        '3271863',
-        '3271832',
-        '3268928',
-        '3268782',
-        '3268133',
-        '3268046',
-        '3267589',
-        '3264235',
-        '3263640',
-        '3263690',
-        '3261061',
-        '3260250',
-        '3259624',
-        '3257538',
-        '3256285',
-        '3251446',
-        '3251399',
-        '3250144',
-        '3249568',
-        '3247593',
-        '3247065',
-        '3246354',
-        '3246144',
-        '3246000',
-        '3245822',
-        '3245619',
-        '3245579',
-        '3245322',
-        '3245053',
-        '3244882',
-        '3244301',
-        '3244212',
-        '3244117',
-        '3243799',
-        '3243615',
-        '3243586',
-        '3243209',
-        '3242745',
-        '3242735',
-        '3242635',
-        '3242538',
-        '3242431',
-        '3242306',
-        '3242026',
-        '3241908',
-        '3230093',
-        '3229823',
-        '3229257',
-        '3228116',
-        '3225033',
-        '3223147',
-        '3222415',
-        '3222299',
-        '3222115',
-        '3220624',
-        '3220614'
-    ]
+    games = get_game_ids('105')
 
     for game_id in games:
 

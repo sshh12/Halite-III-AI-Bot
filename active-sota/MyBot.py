@@ -21,17 +21,15 @@ with import_quietly():
         return xentropy
     keras.losses.custom_xentropy = custom_xentropy
 
-import pickle
 import os
-import uuid
 import random
 import logging
 
-logging.info("[ConvBot] Successfully created bot!")
+logging.info("[ConvBot2] Successfully created bot!")
 
 def model_agent():
 
-    model = load_model('halite-conv-model.h5')
+    # model = load_model('halite-conv-model.h5')
 
     game = hlt.Game()
     game.ready("ModelConv2")

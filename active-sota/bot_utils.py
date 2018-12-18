@@ -76,9 +76,10 @@ def game_to_matrix(game):
 
     game_vec = binary_encode(game.turn_number, 9)
     game_vec.extend(binary_encode(len(ships), 6))
-    game_vec.append(np.log(me.halite_amount + 10) / 8.5)
-    game_vec.append(me.halite_amount > 1000)
-    game_vec.append(me.halite_amount > 4000)
+    game_vec.append(np.log(me.halite_amount + 10) / 8)
+    game_vec.append(me.halite_amount == 0)
+    game_vec.append(me.halite_amount >= 1000)
+    game_vec.append(me.halite_amount >= 4000)
     game_vec = np.array(game_vec, dtype=np.float32)
 
     return map_mat, game_vec
