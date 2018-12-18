@@ -79,6 +79,9 @@ def frame_to_cmds(frame, id_):
     for move in moves:
         if move['type'] == 'g':
             cmds.append('g')
+        if move['type'] == 'c':
+            ship_id = move['id']
+            cmds.append(f'c {ship_id}')
         elif 'direction' in move:
             dir = move['direction']
             ship_id = move['id']
@@ -207,10 +210,9 @@ def build_game(turn, base_map, shipyards, frame, me_id):
 
 ### Main Function ###
 
-def generate_data(replay_url):
+def generate_data(replay_id, save=False):
 
-    dataset = []
-
+    replay_url = f'https://api.2018.halite.io/v1/api/user/0/match/{replay_id}/replay'
     req = requests.get(replay_url)
     data = zstd.loads(req.content)
     data = json.loads(data.decode())
@@ -218,7 +220,12 @@ def generate_data(replay_url):
     winner_id = get_winner_id(data)
 
     (width, height), base_map = get_base_map(data)
+    rounds = len(data['full_frames'])
     shipyards = get_shipyards(data)
+
+    print(width, rounds, replay_id)
+
+    obs, actions = [], []
 
     for i, frame in enumerate(data['full_frames']):
 
@@ -228,15 +235,83 @@ def generate_data(replay_url):
         game_mat, game_vec = game_to_matrix(game)
         cmds_mat = commands_to_matrix(game, winner_cmds)
 
-        dataset.append((game_mat, game_vec, cmds_mat))
+        obs.append((game_mat, game_vec))
+        actions.append(cmds_mat)
 
-    os.makedirs('train', exist_ok=True)
-    with open(f'train\\{replay_url.split("/")[-2]}.halite.pkl', 'wb') as f:
-        pickle.dump(dataset, f)
+    dataset = []
+    for i in range(rounds - 2):
+        dataset.append((obs[i][0], obs[i][1], actions[i+1]))
 
-    return data
+    if save:
+        os.makedirs('train', exist_ok=True)
+        with open(f'train\\{replay_url.split("/")[-2]}.halite.pkl', 'wb') as f:
+            pickle.dump(dataset, f)
+
+    return data, game, dataset
 
 
 if __name__ == "__main__":
 
-    data = generate_data('https://api.2018.halite.io/v1/api/user/0/match/3264235/replay')
+    games = [
+        '3273422',
+        '3271863',
+        '3271832',
+        '3268928',
+        '3268782',
+        '3268133',
+        '3268046',
+        '3267589',
+        '3264235',
+        '3263640',
+        '3263690',
+        '3261061',
+        '3260250',
+        '3259624',
+        '3257538',
+        '3256285',
+        '3251446',
+        '3251399',
+        '3250144',
+        '3249568',
+        '3247593',
+        '3247065',
+        '3246354',
+        '3246144',
+        '3246000',
+        '3245822',
+        '3245619',
+        '3245579',
+        '3245322',
+        '3245053',
+        '3244882',
+        '3244301',
+        '3244212',
+        '3244117',
+        '3243799',
+        '3243615',
+        '3243586',
+        '3243209',
+        '3242745',
+        '3242735',
+        '3242635',
+        '3242538',
+        '3242431',
+        '3242306',
+        '3242026',
+        '3241908',
+        '3230093',
+        '3229823',
+        '3229257',
+        '3228116',
+        '3225033',
+        '3223147',
+        '3222415',
+        '3222299',
+        '3222115',
+        '3220624',
+        '3220614'
+    ]
+
+    for game_id in games:
+
+        data, game, dataset = generate_data(game_id, save=True)

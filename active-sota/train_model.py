@@ -43,67 +43,67 @@ print(maps.shape, vecs.shape, actions.shape)
 map_input = Input(shape=(64, 64, 7))
 game_vec_input = Input(shape=(18,))
 
-x = Conv2D(64, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(map_input)
-x = Conv2D(64, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(64, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(map_input)
+x = Conv2D(64, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
 
 x = d = Dropout(0.25)(x)
 x = MaxPooling2D(pool_size=(2, 2))(x)
 
-x = Conv2D(128, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
-x = Conv2D(128, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(128, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(128, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
 
 x = c = Dropout(0.25)(x)
 x = MaxPooling2D(pool_size=(2, 2))(x)
 
-x = Conv2D(256, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
-x = Conv2D(256, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(256, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(256, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
 
 x = b = Dropout(0.25)(x)
 x = MaxPooling2D(pool_size=(2, 2))(x)
 
-x = Conv2D(512, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
-x = Conv2D(512, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(512, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(512, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
 
 x = a = Dropout(0.25)(x)
 x = MaxPooling2D(pool_size=(2, 2))(x)
 
-x = Conv2D(1024, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(1024, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
 
 game_vec_reshaped = RepeatVector(4 * 4)(game_vec_input)
 game_vec_reshaped = Reshape((4, 4, int(game_vec_input.shape[1])))(game_vec_reshaped)
 
 x = concatenate([x, game_vec_reshaped], axis=3)
 
-x = Conv2D(1024, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
-x = Conv2D(1024, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(1024, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(1024, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
 
 x = Dropout(0.25)(x)
 x = Conv2DTranspose(512, (2, 2), strides=(2, 2))(x)
 
-x = Conv2D(512, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(512, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
 x = concatenate([x, a], axis=3)
-x = Conv2D(512, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(512, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
 
 x = Dropout(0.25)(x)
 x = Conv2DTranspose(256, (2, 2), strides=(2, 2))(x)
 
-x = Conv2D(256, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(256, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
 x = concatenate([x, b], axis=3)
-x = Conv2D(256, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(256, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
 
 x = Dropout(0.25)(x)
 x = Conv2DTranspose(128, (2, 2), strides=(2, 2))(x)
 
-x = Conv2D(128, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(128, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
 x = concatenate([x, c], axis=3)
-x = Conv2D(128, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(128, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
 
 x = Dropout(0.25)(x)
 x = Conv2DTranspose(64, (2, 2), strides=(2, 2))(x)
 
-x = Conv2D(64, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(64, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
 x = concatenate([x, d], axis=3)
-x = Conv2D(64, kernel_size=3, activation='selu', padding='same', kernel_initializer='he_normal')(x)
+x = Conv2D(64, kernel_size=3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
 x = Conv2D(6, kernel_size=1, activation='sigmoid', padding='same', kernel_initializer='he_normal')(x)
 x = Reshape((64 * 64, 6))(x)
 x = Activation('softmax')(x)
@@ -125,14 +125,21 @@ def custom_xentropy(ytrue, ypred):
 
 import keras.losses; keras.losses.custom_xentropy = custom_xentropy
 
-# model = Model(inputs=[map_input, game_vec_input], outputs=out)
-# model.compile(Adam(lr=1e-4), loss=custom_xentropy, metrics=['acc'])
-# plot_model(model, to_file='model.png')
-model = load_model('halite-conv-model.h5')
+if os.path.exists('halite-conv-model.h5'):
+    print('Using saved weights...')
+    model = load_model('halite-conv-model.h5')
+else:
+    print('Using new model...')
+    model = Model(inputs=[map_input, game_vec_input], outputs=out)
+    model.compile(Adam(lr=1e-4), loss=custom_xentropy, metrics=['acc'])
+    plot_model(model, to_file='model.png')
 
 if __name__ == '__main__':
 
     model.fit(x=[maps, vecs], y=actions,
-              epochs=100, batch_size=16,
+              epochs=50, batch_size=16,
               validation_split=0.2, verbose=1,
-              callbacks=[ModelCheckpoint('halite-conv-model.h5', save_best_only=True)])
+              callbacks=[
+                ModelCheckpoint('halite-conv-model.h5', save_best_only=True),
+                ReduceLROnPlateau(patience=16)
+              ])

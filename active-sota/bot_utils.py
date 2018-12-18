@@ -9,6 +9,7 @@ from hlt.positionals import Position
 
 np.set_printoptions(threshold=np.nan)
 
+
 @contextmanager
 def import_quietly():
 
@@ -25,6 +26,7 @@ def import_quietly():
     yield None
 
     sys.stderr = stderr
+
 
 def game_to_matrix(game):
 
@@ -81,6 +83,7 @@ def game_to_matrix(game):
 
     return map_mat, game_vec
 
+
 def commands_to_matrix(game, cmds):
 
     game_map = game.game_map
@@ -98,16 +101,20 @@ def commands_to_matrix(game, cmds):
 
     for ship in ships:
 
+        pos = ship.position
+
         move = None
         for cmd in cmds:
             if str(ship.id) in cmd and not cmd.endswith('o'):
                 move = cmd
                 break
 
-        if move:
+        if move and 'c' in move:
+            cmd_mat[pos.y, pos.x, 1] = 1
+
+        elif move:
             _, _, dir = move.split(' ')
             i = {'n': 2, 's': 3, 'w': 4, 'e': 5}[dir]
-            pos = ship.position
             cmd_mat[pos.y, pos.x, i] = 1
 
     if 'g' in cmds:
@@ -120,6 +127,17 @@ def commands_to_matrix(game, cmds):
                 cmd_mat[y, x, 0] = 1
 
     return cmd_mat
+
+
+def get_ship_at_pos(x, y, ships):
+
+    for ship in ships:
+        pos = ship.position
+        if x == pos.x and y == pos.y:
+            return ship
+
+    return None
+
 
 def matrix_to_cmds(game, matrix):
 
@@ -144,34 +162,27 @@ def matrix_to_cmds(game, matrix):
             vec = matrix[y, x]
             m = np.argmax(vec)
 
-            # with open('test.txt', 'a') as e:
-            #      e.write(str(vec / np.amax(vec)) + '\n')
-            #
-            # with open('test.txt', 'a') as e:
-            #      e.write(str(m) + '\n')
-
             if m == 0:
                 continue
 
-            if m == 1:
+            elif m == 1:
                 if x == shipyard_pos.x and y == shipyard_pos.y and me.halite_amount > 1000:
                     cmds.append('g')
                 else:
-                    pass # dropoff logic
+                    cur_ship = get_ship_at_pos(x, y, ships)
+                    if not cur_ship:
+                        continue
+                    cmds.append(cur_ship.make_dropoff())
 
-            if m in [2, 3, 4, 5]:
-                cur_ship = None
-                for ship in ships:
-                    pos = ship.position
-                    if x == pos.x and y == pos.y:
-                        cur_ship = ship
-                        break
+            elif m in [2, 3, 4, 5]:
+                cur_ship = get_ship_at_pos(x, y, ships)
                 if not cur_ship:
                     continue
                 dir = {2: 'n', 3: 's', 4: 'w', 5: 'e'}[m]
                 cmds.append(f'm {cur_ship.id} {dir}')
 
     return cmds
+
 
 def roll_to_position(entity, mat, crop=4):
 
