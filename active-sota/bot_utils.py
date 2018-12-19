@@ -85,6 +85,20 @@ def game_to_matrix(game):
     return map_mat, game_vec
 
 
+def cmd_for_ship(ship, cmds):
+
+    id_ = str(ship.id)
+
+    for cmd in cmds:
+        parts = cmd.split(' ')
+        if parts[0] == 'c' and parts[1] == id_:
+            return cmd
+        elif parts[0] == 'm' and parts[1] == id_ and parts[2] != 'o':
+            return cmd
+
+    return None
+
+
 def commands_to_matrix(game, cmds):
 
     game_map = game.game_map
@@ -102,18 +116,17 @@ def commands_to_matrix(game, cmds):
 
     for ship in ships:
 
+        move = cmd_for_ship(ship, cmds)
+
         pos = ship.position
 
-        move = None
-        for cmd in cmds:
-            if str(ship.id) in cmd and not cmd.endswith('o'):
-                move = cmd
-                break
+        if not move:
+            continue
 
-        if move and 'c' in move:
+        if 'c' in move:
             cmd_mat[pos.y, pos.x, 1] = 1
 
-        elif move:
+        else:
             _, _, dir = move.split(' ')
             i = {'n': 2, 's': 3, 'w': 4, 'e': 5}[dir]
             cmd_mat[pos.y, pos.x, i] = 1
@@ -167,7 +180,7 @@ def matrix_to_cmds(game, matrix):
                 continue
 
             elif m == 1:
-                if x == shipyard_pos.x and y == shipyard_pos.y and me.halite_amount > 1000:
+                if x == shipyard_pos.x and y == shipyard_pos.y:
                     cmds.append('g')
                 else:
                     cur_ship = get_ship_at_pos(x, y, ships)

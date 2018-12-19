@@ -1,3 +1,4 @@
+from multiprocessing import Pool
 import requests
 import pickle
 import zstd
@@ -29,6 +30,9 @@ class Ship:
         self.halite_amount = 0
         self.position = None
         self.id = None
+
+    def make_dropoff(self):
+        return f'c {self.id}'
 
 class Shipyard:
 
@@ -157,6 +161,11 @@ def get_player(frame, shipyards, ships, id_):
     player.halite_amount = frame['energy'][id_]
     player.shipyard = [ shipyard for shipyard in shipyards if shipyard.owner == id_ ][0]
 
+    # readd the drop in halite
+    cmds = frame_to_cmds(frame, id_)
+    if 'g' in cmds:
+        player.halite_amount += 1000
+
     return player
 
 
@@ -197,13 +206,13 @@ def build_game(turn, base_map, shipyards, frame, me_id):
 
     all_ships = get_ships(frame)
     game_map = build_map(frame, base_map, shipyards, all_ships)
-    winner_player = get_player(frame, shipyards, all_ships, me_id)
+    me_player = get_player(frame, shipyards, all_ships, me_id)
 
     game = Game()
     game.game_map = game_map
     game.my_id = me_id
     game.turn_number = turn
-    game.me = winner_player
+    game.me = me_player
 
     return game
 
@@ -227,7 +236,7 @@ def get_game_ids(player_id, limit=1000):
 
 ### Main Function ###
 
-def generate_data(replay_id, save=False):
+def generate_data(replay_id, save=True):
 
     replay_url = f'https://api.2018.halite.io/v1/api/user/0/match/{replay_id}/replay'
     req = requests.get(replay_url)
@@ -246,10 +255,11 @@ def generate_data(replay_id, save=False):
 
     for i, frame in enumerate(data['full_frames']):
 
-        game = build_game(i + 1, base_map, shipyards, frame, winner_id)
+        game = build_game(i, base_map, shipyards, frame, winner_id)
         winner_cmds = frame_to_cmds(frame, winner_id)
 
         game_mat, game_vec = game_to_matrix(game)
+
         cmds_mat = commands_to_matrix(game, winner_cmds)
 
         obs.append((game_mat, game_vec))
@@ -257,7 +267,7 @@ def generate_data(replay_id, save=False):
 
     dataset = []
     for i in range(rounds - 2):
-        dataset.append((obs[i][0], obs[i][1], actions[i+1]))
+        dataset.append((obs[i + 1][0], obs[i + 1][1], actions[i + 1]))
 
     if save:
         os.makedirs('train', exist_ok=True)
@@ -270,8 +280,7 @@ def generate_data(replay_id, save=False):
 
 if __name__ == "__main__":
 
-    games = get_game_ids('105')
+    games = get_game_ids('3191')
 
-    for game_id in games:
-
-        data, game, dataset = generate_data(game_id, save=True)
+    with Pool(6) as pl:
+        pl.map(generate_data, games)
