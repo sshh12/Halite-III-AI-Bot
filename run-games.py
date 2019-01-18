@@ -1,4 +1,7 @@
-
+"""
+Run a series of games using halite.exe and archived bots and generate
+a leaderboard.
+"""
 from collections import defaultdict
 from tqdm import tqdm
 import subprocess
@@ -11,7 +14,7 @@ NUM_GAMES = 10
 ARCHIVE_DIR = 'archive'
 ARCHIVE_FILE = 'MyBot.py'
 
-MAIN_DIR = 'active-sota'
+MAIN_DIR = 'latest-bot'
 MAIN_FILE = 'MyBot.py'
 
 HALITE_BIN = os.path.join('bin', 'halite.exe')
